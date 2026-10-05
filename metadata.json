@@ -1,0 +1,6 @@
+{
+  "name": "NayaDristi",
+  "description": "A production-ready Nepali digital news portal with a powerful CMS-based Admin Panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

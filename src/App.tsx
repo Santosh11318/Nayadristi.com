@@ -51,6 +51,9 @@ export default function App() {
               <Route path="special" element={<SpecialPage />} />
             </Route>
             
+            {/* Secret Admin Login Routes (Hidden from Public Portal) */}
+            <Route path="/secret-admin" element={<AdminLogin />} />
+            <Route path="/portal-admin" element={<AdminLogin />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             
             <Route path="/admin" element={<ProtectedRoute />}>

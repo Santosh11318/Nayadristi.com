@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saveSession(dummyToken, fallbackUser);
       return fallbackUser;
     }
-    throw new Error("इमेल वा पासवर्ड गलत भयो (Default: admin123)");
+    throw new Error("इमेल वा पासवर्ड गलत भयो");
   };
 
   const quickAdminLogin = async () => {

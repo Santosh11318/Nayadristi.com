@@ -4,8 +4,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ShieldCheck, Lock, Mail, Eye, EyeOff, Zap, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("santoshghartimagar918@gmail.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -125,7 +125,7 @@ export default function AdminLogin() {
               </span>
             </div>
             <p className="text-xs text-slate-600 mb-3">
-              सन्तोष जी, तपाईंको खाता <strong>santoshghartimagar918@gmail.com</strong> मार्फत १-क्लिकमा सिधै लगइन गर्नुहोस्:
+              अधिकृत सम्पादकीय तथा व्यवस्थापकीय पहुँचका लागि १-क्लिकमा लगइन गर्नुहोस्:
             </p>
             <button
               onClick={handleQuickLogin}
@@ -173,7 +173,6 @@ export default function AdminLogin() {
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   पासवर्ड (Password)
                 </label>
-                <span className="text-[11px] text-slate-500">डिफल्ट: <code className="bg-slate-100 px-1 py-0.5 rounded text-red-600 font-mono">admin123</code></span>
               </div>
               <div className="relative rounded-lg shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -223,14 +222,6 @@ export default function AdminLogin() {
               {googleLoading ? "Google खोल्दैछ..." : "Google मार्फत लगइन गर्नुहोस्"}
             </button>
           </div>
-
-          {/* Credentials Info Footer */}
-          <div className="mt-6 p-3 rounded-lg bg-slate-100 text-[11px] text-slate-600 flex flex-col gap-1 text-center">
-            <span className="font-semibold text-slate-800">एडमिन प्रमाण विवरण (Admin Credentials):</span>
-            <span>इमेल: <strong className="text-slate-900 font-mono">santoshghartimagar918@gmail.com</strong></span>
-            <span>पासवर्ड: <strong className="text-slate-900 font-mono">admin123</strong></span>
-          </div>
-
         </div>
       </div>
     </div>

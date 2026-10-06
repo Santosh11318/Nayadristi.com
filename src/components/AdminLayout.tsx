@@ -91,7 +91,7 @@ export default function AdminLayout() {
                 {currentUser?.name || "सन्तोष घर्ती मगर"}
               </div>
               <div className="text-xs text-slate-500 font-mono">
-                {currentUser?.email || "santoshghartimagar918@gmail.com"}
+                {currentUser?.email || "admin@nayadristi.com"}
               </div>
             </div>
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-600 to-amber-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">

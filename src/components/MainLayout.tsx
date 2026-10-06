@@ -166,13 +166,6 @@ export default function MainLayout() {
                 </button>
               </form>
 
-              <Link 
-                to="/admin" 
-                className="flex items-center gap-1.5 bg-slate-900 hover:bg-black text-white px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-bold shadow-sm transition-colors cursor-pointer shrink-0"
-              >
-                <Shield className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">एडमिन</span> लगइन
-              </Link>
             </div>
           </div>
 
@@ -320,20 +313,10 @@ export default function MainLayout() {
               </Link>
             </div>
 
-            {/* Drawer Footer */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
-              <Link 
-                to="/admin" 
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white py-2.5 rounded-lg text-xs font-bold transition-colors"
-              >
-                <Shield className="w-4 h-4 text-amber-400" />
-                एडमिन प्यानल लगइन
-              </Link>
-              <div className="flex justify-between text-xs text-slate-500 pt-2 border-t border-slate-200">
-                <Link to="/about" className="hover:text-slate-800">हाम्रोबारे</Link>
-                <Link to="/contact" className="hover:text-slate-800">सम्पर्क</Link>
-                <Link to="/editorial" className="hover:text-slate-800">नीति</Link>
-              </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between text-xs text-slate-500">
+              <Link to="/about" className="hover:text-slate-800">हाम्रोबारे</Link>
+              <Link to="/contact" className="hover:text-slate-800">सम्पर्क</Link>
+              <Link to="/editorial" className="hover:text-slate-800">नीति</Link>
             </div>
           </div>
         </div>
@@ -405,7 +388,6 @@ export default function MainLayout() {
               <li><Link to="/contact" className="hover:text-white transition-colors">सम्पर्क फारम (Contact Us)</Link></li>
               <li><Link to="/editorial" className="hover:text-white transition-colors">सम्पादकीय आचारसंहिता (Editorial Policy)</Link></li>
               <li><Link to="/special" className="hover:text-white transition-colors">विशेष रिपोर्ट (Special Reports)</Link></li>
-              <li><Link to="/admin" className="text-amber-400 hover:text-amber-300 transition-colors">एडमिन प्यानल लगइन</Link></li>
             </ul>
           </div>
 

@@ -2,22 +2,41 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Star, ChevronRight, Clock, User } from "lucide-react";
+import { getPublishedArticles } from "../lib/firestoreService";
 
 export default function SpecialPage() {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/articles")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          // Special articles are featured or breaking or latest top
+    getPublishedArticles()
+      .then((data) => {
+        if (data && data.length > 0) {
           const special = data.filter((a: any) => a.isFeatured || a.isBreaking);
           setArticles(special.length > 0 ? special : data);
+        } else {
+          fetch("/api/articles")
+            .then(res => res.json())
+            .then(apiData => {
+              if (Array.isArray(apiData)) {
+                const special = apiData.filter((a: any) => a.isFeatured || a.isBreaking);
+                setArticles(special.length > 0 ? special : apiData);
+              }
+            })
+            .catch(() => {});
         }
       })
-      .catch(console.error)
+      .catch(() => {
+        fetch("/api/articles")
+          .then(res => res.json())
+          .then(apiData => {
+            if (Array.isArray(apiData)) {
+              const special = apiData.filter((a: any) => a.isFeatured || a.isBreaking);
+              setArticles(special.length > 0 ? special : apiData);
+            }
+          })
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, []);
 

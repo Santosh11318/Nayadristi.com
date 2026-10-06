@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Edit, Plus, Trash2, ExternalLink, Flame, Star, Newspaper } from "lucide-react";
+import { getAllAdminArticles, deleteArticle as deleteFirestoreArticle } from "../../lib/firestoreService";
 
 export default function AdminNewsList() {
   const [articles, setArticles] = useState<any[]>([]);
@@ -13,21 +14,31 @@ export default function AdminNewsList() {
 
   const fetchArticles = async () => {
     try {
-      const res = await fetch("/api/admin/articles");
-      const data = await res.json();
-      if (Array.isArray(data)) setArticles(data);
+      const fbArticles = await getAllAdminArticles();
+      if (fbArticles && fbArticles.length > 0) {
+        setArticles(fbArticles);
+      } else {
+        const res = await fetch("/api/admin/articles");
+        const data = await res.json();
+        if (Array.isArray(data)) setArticles(data);
+      }
     } catch (err) {
       console.error(err);
+      fetch("/api/admin/articles")
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setArticles(data); })
+        .catch(() => {});
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: any) => {
     if (!confirm("के तपाईं यो समाचार हटाउन निश्चित हुनुहुन्छ?")) return;
     
     try {
-      await fetch(`/api/articles/${id}`, { method: "DELETE" });
+      await deleteFirestoreArticle(String(id));
+      await fetch(`/api/articles/${id}`, { method: "DELETE" }).catch(() => {});
       setArticles(articles.filter(a => a.id !== id));
     } catch (err) {
       console.error(err);

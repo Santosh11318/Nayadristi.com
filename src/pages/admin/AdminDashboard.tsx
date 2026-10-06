@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
+import { getPortalStats } from "../../lib/firestoreService";
+
 export default function AdminDashboard() {
   const { currentUser, token } = useAuth();
   const [data, setData] = useState({
@@ -15,6 +17,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        const fbStats = await getPortalStats();
+        if (fbStats && (fbStats.articles > 0 || fbStats.categories > 0)) {
+          setData(fbStats);
+          return;
+        }
+
         const activeToken = (await currentUser?.getIdToken?.()) || token;
         const res = await fetch("/api/admin/stats", {
           headers: {
@@ -24,6 +32,8 @@ export default function AdminDashboard() {
         if (res.ok) {
           const stats = await res.json();
           setData(stats);
+        } else if (fbStats) {
+          setData(fbStats);
         }
       } catch (err) {
         console.error("Failed to fetch stats", err);

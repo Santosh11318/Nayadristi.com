@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import slugify from "slugify";
 import { ArrowLeft, Save, Sparkles } from "lucide-react";
+import { 
+  createArticle, updateArticle, getCategories, getAuthors, getArticleBySlug 
+} from "../../lib/firestoreService";
 
 export default function AdminNewsEditor() {
   const { id } = useParams();
@@ -27,46 +30,80 @@ export default function AdminNewsEditor() {
   });
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/categories").then(res => res.json()),
-      fetch("/api/authors").then(res => res.json())
-    ]).then(([categoriesData, authorsData]) => {
-      if (Array.isArray(categoriesData)) {
-        setCategories(categoriesData);
-        if (!id && categoriesData.length > 0 && !formData.categoryId) {
-          setFormData(prev => ({ ...prev, categoryId: categoriesData[0].id.toString() }));
+    async function loadMeta() {
+      try {
+        const [cats, auths] = await Promise.all([
+          getCategories(),
+          getAuthors()
+        ]);
+
+        if (cats && cats.length > 0) {
+          setCategories(cats);
+          if (!id && !formData.categoryId) {
+            setFormData(prev => ({ ...prev, categoryId: cats[0].id.toString() }));
+          }
+        } else {
+          fetch("/api/categories").then(res => res.json()).then(data => {
+            if (Array.isArray(data)) setCategories(data);
+          }).catch(() => {});
         }
-      }
-      if (Array.isArray(authorsData)) {
-        setAuthors(authorsData);
-        if (!id && authorsData.length > 0 && !formData.authorId) {
-          setFormData(prev => ({ ...prev, authorId: authorsData[0].id.toString() }));
+
+        if (auths && auths.length > 0) {
+          setAuthors(auths);
+        } else {
+          fetch("/api/authors").then(res => res.json()).then(data => {
+            if (Array.isArray(data)) setAuthors(data);
+          }).catch(() => {});
         }
+      } catch (err) {
+        console.error("Error loading editor meta:", err);
       }
-    });
+    }
+
+    loadMeta();
 
     if (id) {
-      fetch(`/api/articles/${id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data) {
-            setFormData({
-              title: data.title || "",
-              slug: data.slug || "",
-              summary: data.summary || "",
-              content: data.content || "",
-              featuredImageUrl: data.featuredImageUrl || "",
-              imageCaption: data.imageCaption || "",
-              categoryId: data.categoryId?.toString() || "",
-              authorId: data.authorId?.toString() || "",
-              status: data.status || "draft",
-              isFeatured: Boolean(data.isFeatured),
-              isBreaking: Boolean(data.isBreaking),
-            });
-          }
+      // Try fetching by id/slug from Firestore or API
+      getArticleBySlug(id).then(data => {
+        if (data) {
+          setFormData({
+            title: data.title || "",
+            slug: data.slug || "",
+            summary: data.summary || "",
+            content: data.content || "",
+            featuredImageUrl: data.featuredImageUrl || "",
+            imageCaption: data.imageCaption || "",
+            categoryId: data.categoryId?.toString() || "",
+            authorId: data.authorId?.toString() || "",
+            status: data.status || "published",
+            isFeatured: Boolean(data.isFeatured),
+            isBreaking: Boolean(data.isBreaking),
+          });
           setLoading(false);
-        })
-        .catch(console.error);
+        } else {
+          fetch(`/api/articles/${id}`)
+            .then(res => res.json())
+            .then(apiData => {
+              if (apiData) {
+                setFormData({
+                  title: apiData.title || "",
+                  slug: apiData.slug || "",
+                  summary: apiData.summary || "",
+                  content: apiData.content || "",
+                  featuredImageUrl: apiData.featuredImageUrl || "",
+                  imageCaption: apiData.imageCaption || "",
+                  categoryId: apiData.categoryId?.toString() || "",
+                  authorId: apiData.authorId?.toString() || "",
+                  status: apiData.status || "published",
+                  isFeatured: Boolean(apiData.isFeatured),
+                  isBreaking: Boolean(apiData.isBreaking),
+                });
+              }
+              setLoading(false);
+            })
+            .catch(() => setLoading(false));
+        }
+      });
     }
   }, [id]);
 
@@ -88,26 +125,43 @@ export default function AdminNewsEditor() {
     setSaving(true);
     setErrorMsg("");
     try {
-      const url = id ? `/api/articles/${id}` : "/api/articles";
-      const method = id ? "PUT" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
-          authorId: formData.authorId ? parseInt(formData.authorId) : null,
-        })
-      });
-      if (res.ok) {
-        navigate("/admin/news");
+      const selectedCategory = categories.find(c => String(c.id) === String(formData.categoryId));
+      const selectedAuthor = authors.find(a => String(a.id) === String(formData.authorId));
+
+      const payload: any = {
+        ...formData,
+        category: selectedCategory ? { id: selectedCategory.id, name: selectedCategory.name, slug: selectedCategory.slug } : undefined,
+        author: selectedAuthor ? { id: selectedAuthor.id, name: selectedAuthor.name, designation: selectedAuthor.designation } : undefined,
+      };
+
+      // 1. Direct Save to Google Firestore
+      if (id) {
+        await updateArticle(id, payload);
       } else {
-        const err = await res.json();
-        setErrorMsg(err.error || "समाचार सुरक्षित गर्न सकिएन। कृपया विवरण जाँच गर्नुहोस्।");
+        await createArticle(payload);
       }
+
+      // 2. Also sync with server API if running
+      try {
+        const url = id ? `/api/articles/${id}` : "/api/articles";
+        const method = id ? "PUT" : "POST";
+        await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
+            authorId: formData.authorId ? parseInt(formData.authorId) : null,
+          })
+        });
+      } catch (e) {
+        // Ignored if purely static on GitHub Pages
+      }
+
+      navigate("/admin/news");
     } catch (err: any) {
       console.error(err);
-      setErrorMsg("त्रुटि भयो: " + (err.message || "Network error"));
+      setErrorMsg("त्रुटि भयो: " + (err.message || "Could not save article"));
     } finally {
       setSaving(false);
     }

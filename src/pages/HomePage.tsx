@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Clock, User, Flame, ArrowRight, TrendingUp } from "lucide-react";
 import { toNepaliNumber } from "../lib/nepaliDate";
 import AdSlot from "../components/AdSlot";
+import { getPublishedArticles, getAdvertisements } from "../lib/firestoreService";
 
 export default function HomePage() {
   const [articles, setArticles] = useState<any[]>([]);
@@ -11,16 +12,33 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/articles").then(res => res.json()),
-      fetch("/api/advertisements").then(res => res.json()).catch(() => [])
-    ])
-      .then(([articlesData, adsData]) => {
-        if (Array.isArray(articlesData)) setArticles(articlesData);
-        if (Array.isArray(adsData)) setAds(adsData);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    async function loadData() {
+      try {
+        const [firestoreArticles, firestoreAds] = await Promise.all([
+          getPublishedArticles(),
+          getAdvertisements()
+        ]);
+
+        if (firestoreArticles && firestoreArticles.length > 0) {
+          setArticles(firestoreArticles);
+        } else {
+          const res = await fetch("/api/articles").then(r => r.json()).catch(() => []);
+          if (Array.isArray(res) && res.length > 0) setArticles(res);
+        }
+
+        if (firestoreAds && firestoreAds.length > 0) {
+          setAds(firestoreAds);
+        } else {
+          const res = await fetch("/api/advertisements").then(r => r.json()).catch(() => []);
+          if (Array.isArray(res) && res.length > 0) setAds(res);
+        }
+      } catch (err) {
+        console.error("HomePage load error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
   const featured = articles.filter(a => a.isFeatured)[0] || articles[0];

@@ -4,6 +4,7 @@ import { Search, Menu, X, Clock, Calendar, Shield, Share2, ArrowRight } from "lu
 import { format } from "date-fns";
 import { getNepaliDate, formatNepaliTime } from "../lib/nepaliDate";
 import AdSlot from "./AdSlot";
+import { getBreakingNews, getCategories } from "../lib/firestoreService";
 
 export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,21 +29,38 @@ export default function MainLayout() {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // Fetch breaking news & categories
+  // Fetch breaking news & categories from Firestore / API
   useEffect(() => {
-    fetch("/api/breaking-news")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) setBreakingNews(data);
-      })
-      .catch(console.error);
+    async function fetchLayoutData() {
+      try {
+        const [fbBreaking, fbCats] = await Promise.all([
+          getBreakingNews(),
+          getCategories()
+        ]);
 
-    fetch("/api/categories")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) setCategories(data);
-      })
-      .catch(console.error);
+        if (fbBreaking && fbBreaking.length > 0) {
+          setBreakingNews(fbBreaking);
+        } else {
+          fetch("/api/breaking-news")
+            .then(res => res.json())
+            .then(data => { if (Array.isArray(data) && data.length > 0) setBreakingNews(data); })
+            .catch(() => {});
+        }
+
+        if (fbCats && fbCats.length > 0) {
+          setCategories(fbCats);
+        } else {
+          fetch("/api/categories")
+            .then(res => res.json())
+            .then(data => { if (Array.isArray(data) && data.length > 0) setCategories(data); })
+            .catch(() => {});
+        }
+      } catch (err) {
+        console.error("Layout data fetch error:", err);
+      }
+    }
+
+    fetchLayoutData();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {

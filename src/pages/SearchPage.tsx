@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Search, ChevronRight, Clock, ArrowLeft } from "lucide-react";
+import { searchArticles } from "../lib/firestoreService";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,12 +19,27 @@ export default function SearchPage() {
       return;
     }
     setLoading(true);
-    fetch(`/api/search?q=${encodeURIComponent(q.trim())}`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setResults(data);
+    searchArticles(q)
+      .then((fbResults) => {
+        if (fbResults && fbResults.length > 0) {
+          setResults(fbResults);
+        } else {
+          fetch(`/api/search?q=${encodeURIComponent(q.trim())}`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (Array.isArray(data)) setResults(data);
+            })
+            .catch(() => {});
+        }
       })
-      .catch(console.error)
+      .catch(() => {
+        fetch(`/api/search?q=${encodeURIComponent(q.trim())}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data)) setResults(data);
+          })
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, [searchParams]);
 

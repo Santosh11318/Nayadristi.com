@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Clock, User, ChevronRight, Flame, ArrowLeft } from "lucide-react";
 import AdSlot from "../components/AdSlot";
+import { getPublishedArticles, getCategories } from "../lib/firestoreService";
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -11,17 +12,35 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch("/api/articles").then(res => res.json()),
-      fetch("/api/categories").then(res => res.json())
-    ])
-      .then(([articlesData, categoriesData]) => {
-        if (Array.isArray(articlesData)) setArticles(articlesData);
-        if (Array.isArray(categoriesData)) setCategories(categoriesData);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    async function loadData() {
+      setLoading(true);
+      try {
+        const [fbArticles, fbCats] = await Promise.all([
+          getPublishedArticles(),
+          getCategories()
+        ]);
+
+        if (fbArticles && fbArticles.length > 0) {
+          setArticles(fbArticles);
+        } else {
+          const res = await fetch("/api/articles").then(r => r.json()).catch(() => []);
+          if (Array.isArray(res)) setArticles(res);
+        }
+
+        if (fbCats && fbCats.length > 0) {
+          setCategories(fbCats);
+        } else {
+          const res = await fetch("/api/categories").then(r => r.json()).catch(() => []);
+          if (Array.isArray(res)) setCategories(res);
+        }
+      } catch (err) {
+        console.error("Category page load error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
   }, [slug]);
 
   // Find active category

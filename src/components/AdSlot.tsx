@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Megaphone, ExternalLink, Sparkles } from "lucide-react";
+import { getAdvertisements } from "../lib/firestoreService";
 
 interface AdSlotProps {
   position: string;
@@ -27,12 +28,27 @@ export default function AdSlot({
       return;
     }
 
-    fetch("/api/advertisements")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setInternalAds(data);
+    getAdvertisements()
+      .then((adsList) => {
+        if (adsList && adsList.length > 0) {
+          setInternalAds(adsList);
+        } else {
+          fetch("/api/advertisements")
+            .then((res) => res.json())
+            .then((data) => {
+              if (Array.isArray(data)) setInternalAds(data);
+            })
+            .catch(() => {});
+        }
       })
-      .catch(console.error)
+      .catch(() => {
+        fetch("/api/advertisements")
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data)) setInternalAds(data);
+          })
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, [passedAds]);
 

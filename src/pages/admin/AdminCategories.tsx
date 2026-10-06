@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Edit, Plus, Trash2 } from "lucide-react";
+import { getCategories, createCategory, deleteCategory } from "../../lib/firestoreService";
 
 export default function AdminCategories() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -13,11 +14,20 @@ export default function AdminCategories() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch("/api/categories");
-      const data = await res.json();
-      setCategories(data);
+      const fbCats = await getCategories();
+      if (fbCats && fbCats.length > 0) {
+        setCategories(fbCats);
+      } else {
+        const res = await fetch("/api/categories");
+        const data = await res.json();
+        if (Array.isArray(data)) setCategories(data);
+      }
     } catch (err) {
       console.error(err);
+      fetch("/api/categories")
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setCategories(data); })
+        .catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -25,13 +35,18 @@ export default function AdminCategories() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name || !slug) return;
     try {
-      const res = await fetch("/api/categories", {
+      // 1. Save directly to Firestore
+      const newCat = await createCategory({ name, slug, sortOrder: categories.length + 1 });
+      
+      // 2. Sync to API if running
+      fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, slug })
-      });
-      const newCat = await res.json();
+      }).catch(() => {});
+
       setCategories([...categories, newCat]);
       setName("");
       setSlug("");
@@ -40,10 +55,11 @@ export default function AdminCategories() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this category?")) return;
+  const handleDelete = async (id: any) => {
+    if (!confirm("के तपाईं यो वर्ग (Category) हटाउन निश्चित हुनुहुन्छ?")) return;
     try {
-      await fetch(`/api/categories/${id}`, { method: "DELETE" });
+      await deleteCategory(String(id));
+      fetch(`/api/categories/${id}`, { method: "DELETE" }).catch(() => {});
       setCategories(categories.filter(c => c.id !== id));
     } catch (err) {
       console.error(err);

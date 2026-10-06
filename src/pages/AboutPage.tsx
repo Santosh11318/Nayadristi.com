@@ -1,17 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Users, Award, ShieldCheck, HeartHandshake, ChevronRight, Globe } from "lucide-react";
+import { getAuthors } from "../lib/firestoreService";
 
 export default function AboutPage() {
   const [authors, setAuthors] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/authors")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setAuthors(data);
+    getAuthors()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setAuthors(data);
+        } else {
+          fetch("/api/authors")
+            .then(res => res.json())
+            .then(apiData => {
+              if (Array.isArray(apiData)) setAuthors(apiData);
+            })
+            .catch(() => {});
+        }
       })
-      .catch(console.error);
+      .catch(() => {
+        fetch("/api/authors")
+          .then(res => res.json())
+          .then(apiData => {
+            if (Array.isArray(apiData)) setAuthors(apiData);
+          })
+          .catch(() => {});
+      });
   }, []);
 
   return (

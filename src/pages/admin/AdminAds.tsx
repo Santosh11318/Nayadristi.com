@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Megaphone, Plus, Trash2, ExternalLink, Image as ImageIcon, CheckCircle2, XCircle, Power, Eye, Sparkles } from "lucide-react";
+import { 
+  getAllAdminAdvertisements, createAdvertisement as createFirestoreAd, 
+  toggleAdvertisement as toggleFirestoreAd, deleteAdvertisement as deleteFirestoreAd 
+} from "../../lib/firestoreService";
 
 export default function AdminAds() {
   const [ads, setAds] = useState<any[]>([]);
@@ -33,17 +37,20 @@ export default function AdminAds() {
 
   const fetchAds = async () => {
     try {
-      const res = await fetch("/api/admin/advertisements");
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setAds(data);
+      const fbAds = await getAllAdminAdvertisements();
+      if (fbAds && fbAds.length > 0) {
+        setAds(fbAds);
       } else {
-        const fallbackRes = await fetch("/api/advertisements");
-        const fallbackData = await fallbackRes.json();
-        if (Array.isArray(fallbackData)) setAds(fallbackData);
+        const res = await fetch("/api/admin/advertisements");
+        const data = await res.json();
+        if (Array.isArray(data)) setAds(data);
       }
     } catch (err) {
       console.error(err);
+      fetch("/api/admin/advertisements")
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setAds(data); })
+        .catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -54,12 +61,16 @@ export default function AdminAds() {
     if (!title || !imageUrl) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/advertisements", {
+      // 1. Direct save to Firestore
+      const newAd = await createFirestoreAd({ title, position, imageUrl, adUrl });
+      
+      // 2. Also sync to API if available
+      fetch("/api/advertisements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, position, imageUrl, adUrl })
-      });
-      const newAd = await res.json();
+      }).catch(() => {});
+
       setAds([newAd, ...ads]);
       setTitle("");
       setImageUrl("");
@@ -71,20 +82,23 @@ export default function AdminAds() {
     }
   };
 
-  const handleToggleActive = async (id: number) => {
+  const handleToggleActive = async (id: any) => {
+    const currentAd = ads.find(a => a.id === id);
+    if (!currentAd) return;
     try {
-      const res = await fetch(`/api/advertisements/${id}/toggle`, { method: "PATCH" });
-      const updated = await res.json();
-      setAds(ads.map(a => a.id === id ? { ...a, isActive: updated.isActive } : a));
+      await toggleFirestoreAd(String(id), Boolean(currentAd.isActive));
+      fetch(`/api/advertisements/${id}/toggle`, { method: "PATCH" }).catch(() => {});
+      setAds(ads.map(a => a.id === id ? { ...a, isActive: !a.isActive } : a));
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: any) => {
     if (!confirm("के तपाईं यो विज्ञापन हटाउन निश्चित हुनुहुन्छ?")) return;
     try {
-      await fetch(`/api/advertisements/${id}`, { method: "DELETE" });
+      await deleteFirestoreAd(String(id));
+      fetch(`/api/advertisements/${id}`, { method: "DELETE" }).catch(() => {});
       setAds(ads.filter(a => a.id !== id));
     } catch (err) {
       console.error(err);

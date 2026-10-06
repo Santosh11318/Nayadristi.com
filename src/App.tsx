@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./components/MainLayout";
 import HomePage from "./pages/HomePage";
@@ -26,8 +27,13 @@ import AdminAuthors from "./pages/admin/AdminAuthors";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminAds from "./pages/admin/AdminAds";
 import AdminSettings from "./pages/admin/AdminSettings";
+import { seedInitialFirestoreData } from "./lib/firestoreService";
 
 export default function App() {
+  useEffect(() => {
+    seedInitialFirestoreData();
+  }, []);
+
   return (
     <AuthProvider>
       <BrowserRouter>

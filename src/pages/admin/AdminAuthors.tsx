@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Users, Plus, Trash2, UserCheck } from "lucide-react";
+import { getAuthors, createAuthor, deleteAuthor } from "../../lib/firestoreService";
 
 export default function AdminAuthors() {
   const [authors, setAuthors] = useState<any[]>([]);
@@ -16,11 +17,20 @@ export default function AdminAuthors() {
 
   const fetchAuthors = async () => {
     try {
-      const res = await fetch("/api/authors");
-      const data = await res.json();
-      setAuthors(data);
+      const fbAuthors = await getAuthors();
+      if (fbAuthors && fbAuthors.length > 0) {
+        setAuthors(fbAuthors);
+      } else {
+        const res = await fetch("/api/authors");
+        const data = await res.json();
+        if (Array.isArray(data)) setAuthors(data);
+      }
     } catch (err) {
       console.error(err);
+      fetch("/api/authors")
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setAuthors(data); })
+        .catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -28,14 +38,19 @@ export default function AdminAuthors() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/authors", {
+      // 1. Direct save to Firestore
+      const newAuthor = await createAuthor({ name, designation, bio, photoUrl });
+
+      // 2. Sync to API if running
+      fetch("/api/authors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, designation, bio, photoUrl })
-      });
-      const newAuthor = await res.json();
+      }).catch(() => {});
+
       setAuthors([newAuthor, ...authors]);
       setName("");
       setDesignation("");
@@ -48,10 +63,11 @@ export default function AdminAuthors() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this author?")) return;
+  const handleDelete = async (id: any) => {
+    if (!confirm("के तपाईं यो लेखक/पत्रकार हटाउन निश्चित हुनुहुन्छ?")) return;
     try {
-      await fetch(`/api/authors/${id}`, { method: "DELETE" });
+      await deleteAuthor(String(id));
+      fetch(`/api/authors/${id}`, { method: "DELETE" }).catch(() => {});
       setAuthors(authors.filter(a => a.id !== id));
     } catch (err) {
       console.error(err);

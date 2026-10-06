@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { getNepaliDate } from "../lib/nepaliDate";
 import AdSlot from "../components/AdSlot";
+import { getArticleBySlug, getPublishedArticles, getArticleComments, addComment } from "../lib/firestoreService";
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -29,37 +30,56 @@ export default function ArticlePage() {
   const [commentError, setCommentError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    setCommentSuccess(false);
-    setCommentError("");
+    async function loadArticle() {
+      if (!slug) return;
+      setLoading(true);
+      setCommentSuccess(false);
+      setCommentError("");
 
-    fetch(`/api/articles`)
-      .then(res => res.json())
-      .then(all => {
-        if (!Array.isArray(all)) return;
-        const current = all.find((a: any) => a.slug === slug);
+      try {
+        // Try Firestore first
+        let current = await getArticleBySlug(slug);
+        let allArticles = await getPublishedArticles();
+
+        // Fallback to API if not in Firestore
+        if (!current) {
+          const res = await fetch("/api/articles").then(r => r.json()).catch(() => []);
+          if (Array.isArray(res)) {
+            allArticles = res;
+            current = res.find((a: any) => a.slug === slug) || null;
+          }
+        }
+
         setArticle(current);
 
         if (current) {
-          // Fetch comments
-          fetch(`/api/articles/${current.id}/comments`)
-            .then(res => res.json())
-            .then(data => {
-              if (Array.isArray(data)) setCommentsList(data);
-            })
-            .catch(console.error);
+          // Fetch comments from Firestore
+          const comments = await getArticleComments(current.id);
+          if (comments && comments.length > 0) {
+            setCommentsList(comments);
+          } else {
+            fetch(`/api/articles/${current.id}/comments`)
+              .then(res => res.json())
+              .then(data => { if (Array.isArray(data)) setCommentsList(data); })
+              .catch(() => {});
+          }
 
-          // Related news from same category
-          const related = all
-            .filter((a: any) => a.id !== current.id && a.categoryId === current.categoryId)
+          // Related news
+          const related = allArticles
+            .filter((a: any) => a.id !== current.id && (a.category?.name === current.category?.name || a.categoryId === current.categoryId))
             .slice(0, 3);
-          setRelatedArticles(related.length > 0 ? related : all.filter(a => a.id !== current.id).slice(0, 3));
+          setRelatedArticles(related.length > 0 ? related : allArticles.filter(a => a.id !== current.id).slice(0, 3));
         }
 
-        setTrendingArticles(all.slice(0, 6));
+        setTrendingArticles(allArticles.slice(0, 6));
+      } catch (err) {
+        console.error("ArticlePage load error:", err);
+      } finally {
         setLoading(false);
-      })
-      .catch(console.error);
+      }
+    }
+
+    loadArticle();
   }, [slug]);
 
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -77,24 +97,35 @@ export default function ArticlePage() {
     setCommentError("");
     setCommentSuccess(false);
     try {
-      const res = await fetch(`/api/articles/${article.id}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: commentName,
-          email: commentEmail,
-          content: commentContent,
-        }),
+      // Post comment directly to Firestore
+      const newComment = await addComment({
+        articleId: article.id,
+        articleSlug: article.slug,
+        name: commentName.trim(),
+        email: commentEmail.trim(),
+        content: commentContent.trim(),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "कमेन्ट पोस्ट हुन सकेन");
-      }
-      setCommentsList([data, ...commentsList]);
+
+      setCommentsList([newComment, ...commentsList]);
       setCommentContent("");
       setCommentSuccess(true);
     } catch (err: any) {
-      setCommentError(err.message || "कमेन्ट पठाउन सकिएन");
+      console.error(err);
+      // Fallback to API if available
+      try {
+        const res = await fetch(`/api/articles/${article.id}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: commentName, email: commentEmail, content: commentContent }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setCommentsList([data, ...commentsList]);
+        setCommentContent("");
+        setCommentSuccess(true);
+      } catch (fallbackErr: any) {
+        setCommentError(fallbackErr.message || "कमेन्ट पठाउन सकिएन");
+      }
     } finally {
       setSubmittingComment(false);
     }

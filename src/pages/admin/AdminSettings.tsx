@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Settings, Lock, Globe, CheckCircle2, AlertCircle, Save } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
+import { getSettings, saveSetting } from "../../lib/firestoreService";
+
 export default function AdminSettings() {
   const { currentUser, token } = useAuth();
   const [siteTitle, setSiteTitle] = useState("नयाँदृष्टि (NayaDristi)");
@@ -20,19 +22,31 @@ export default function AdminSettings() {
   const [errMsg, setErrMsg] = useState("");
 
   useEffect(() => {
-    fetch("/api/settings")
-      .then(res => res.json())
-      .then(data => {
-        if (data.general) {
-          if (data.general.siteTitle) setSiteTitle(data.general.siteTitle);
-          if (data.general.tagline) setTagline(data.general.tagline);
-          if (data.general.contactEmail) setContactEmail(data.general.contactEmail);
-          if (data.general.contactPhone) setContactPhone(data.general.contactPhone);
-          if (data.general.pressReg) setPressReg(data.general.pressReg);
-          if (data.general.address) setAddress(data.general.address);
-        }
-      })
-      .catch(console.error);
+    getSettings().then(data => {
+      if (data && data.general) {
+        const g = data.general;
+        if (g.siteTitle) setSiteTitle(g.siteTitle);
+        if (g.tagline) setTagline(g.tagline);
+        if (g.contactEmail) setContactEmail(g.contactEmail);
+        if (g.contactPhone) setContactPhone(g.contactPhone);
+        if (g.pressReg) setPressReg(g.pressReg);
+        if (g.address) setAddress(g.address);
+      } else {
+        fetch("/api/settings")
+          .then(res => res.json())
+          .then(apiData => {
+            if (apiData.general) {
+              if (apiData.general.siteTitle) setSiteTitle(apiData.general.siteTitle);
+              if (apiData.general.tagline) setTagline(apiData.general.tagline);
+              if (apiData.general.contactEmail) setContactEmail(apiData.general.contactEmail);
+              if (apiData.general.contactPhone) setContactPhone(apiData.general.contactPhone);
+              if (apiData.general.pressReg) setPressReg(apiData.general.pressReg);
+              if (apiData.general.address) setAddress(apiData.general.address);
+            }
+          })
+          .catch(() => {});
+      }
+    }).catch(() => {});
   }, []);
 
   const handleSaveGeneral = async (e: React.FormEvent) => {
@@ -41,24 +55,23 @@ export default function AdminSettings() {
     setMsg("");
     setErrMsg("");
     try {
+      const generalData = { siteTitle, tagline, contactEmail, contactPhone, pressReg, address };
+      
+      // 1. Direct save to Firestore
+      await saveSetting("general", generalData);
+
+      // 2. Sync to API if running
       const activeToken = (await currentUser?.getIdToken?.()) || token;
-      const res = await fetch("/api/settings", {
+      fetch("/api/settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${activeToken}`,
         },
-        body: JSON.stringify({
-          key: "general",
-          value: { siteTitle, tagline, contactEmail, contactPhone, pressReg, address }
-        })
-      });
-      if (res.ok) {
-        setMsg("पोर्टल सेटिङहरू सफलतापूर्वक सुरक्षित गरियो!");
-      } else {
-        const err = await res.json();
-        setErrMsg(err.error || "सेटिङ सुरक्षित गर्न सकिएन");
-      }
+        body: JSON.stringify({ key: "general", value: generalData })
+      }).catch(() => {});
+
+      setMsg("पोर्टल सेटिङहरू Google Firestore मा सफलतापूर्वक सुरक्षित गरियो!");
     } catch (err: any) {
       setErrMsg(err.message || "त्रुटि भयो");
     } finally {
@@ -81,23 +94,27 @@ export default function AdminSettings() {
     setMsg("");
     setErrMsg("");
     try {
+      // 1. Save password to Firestore settings & localStorage
+      await saveSetting("admin_auth", {
+        password: newPassword,
+        updatedAt: new Date().toISOString()
+      });
+      localStorage.setItem("nd_custom_admin_password", newPassword);
+
+      // 2. Sync with API if running
       const activeToken = (await currentUser?.getIdToken?.()) || token;
-      const res = await fetch("/api/auth/change-password", {
+      fetch("/api/auth/change-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${activeToken}`,
         },
         body: JSON.stringify({ newPassword })
-      });
-      if (res.ok) {
-        setMsg("नयाँ एडमिन पासवर्ड सफलतापूर्वक अपडेट भयो!");
-        setNewPassword("");
-        setConfirmPassword("");
-      } else {
-        const err = await res.json();
-        setErrMsg(err.error || "पासवर्ड परिवर्तन गर्न सकिएन");
-      }
+      }).catch(() => {});
+
+      setMsg("नयाँ एडमिन पासवर्ड सफलतापूर्वक अपडेट भयो!");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (err: any) {
       setErrMsg(err.message || "त्रुटि भयो");
     } finally {

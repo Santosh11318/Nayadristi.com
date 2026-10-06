@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function isValidComment(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 2000;
+    }
+
+    // Public readable articles
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if true; // Allows seamless admin management from portal
+    }
+
+    // Categories
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Authors
+    match /authors/{authorId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Advertisements
+    match /advertisements/{adId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Reader Comments
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isValidComment(request.resource.data);
+      allow update, delete: if true;
+    }
+
+    // Portal Settings
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Connection testing
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

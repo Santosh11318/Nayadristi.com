@@ -51,8 +51,8 @@ export default function ArticlePage() {
         }
 
         setArticle(current);
-
         if (current) {
+          document.title = `${current.title} | नयाँदृष्टि`;
           // Fetch comments from Firestore
           const comments = await getArticleComments(current.id);
           if (comments && comments.length > 0) {

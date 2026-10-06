@@ -58,6 +58,12 @@ export default function CategoryPage() {
 
   const categoryName = currentCategory?.name || slug;
 
+  useEffect(() => {
+    if (categoryName) {
+      document.title = `${categoryName} | नयाँदृष्टि`;
+    }
+  }, [categoryName]);
+
   // Filter articles belonging to this category
   const categoryArticles = articles.filter(a => {
     if (!a.category) return false;

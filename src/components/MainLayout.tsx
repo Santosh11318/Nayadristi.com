@@ -85,7 +85,10 @@ export default function MainLayout() {
     { name: "विचार", slug: "opinion" },
   ];
 
-  const displayCategories = categories.length > 0 ? categories : defaultCategories;
+  const rawCategories = categories.length > 0 ? categories : defaultCategories;
+  const displayCategories = rawCategories.filter((cat, idx, arr) => 
+    idx === arr.findIndex(c => (c.name?.trim() === cat.name?.trim()) || (c.slug?.trim() === cat.slug?.trim()))
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F9FA] font-sans text-slate-900">

@@ -51,10 +51,10 @@ export default function App() {
               <Route path="special" element={<SpecialPage />} />
             </Route>
             
-            {/* Secret Admin Login Routes (Hidden from Public Portal) */}
+            {/* Secret Admin Login Route */}
             <Route path="/secret-admin" element={<AdminLogin />} />
-            <Route path="/portal-admin" element={<AdminLogin />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/portal-admin" element={<Navigate to="/secret-admin" replace />} />
+            <Route path="/admin/login" element={<Navigate to="/secret-admin" replace />} />
             
             <Route path="/admin" element={<ProtectedRoute />}>
               <Route element={<AdminLayout />}>

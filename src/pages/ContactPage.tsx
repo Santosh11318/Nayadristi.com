@@ -9,6 +9,10 @@ export default function ContactPage() {
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  React.useEffect(() => {
+    document.title = "सम्पर्क (Contact Us) | नयाँदृष्टि";
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);

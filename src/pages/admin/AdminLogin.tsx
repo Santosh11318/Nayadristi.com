@@ -17,6 +17,7 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "प्रशासक लगइन (Admin Login) | नयाँदृष्टि";
     if (currentUser) {
       navigate("/admin");
     }

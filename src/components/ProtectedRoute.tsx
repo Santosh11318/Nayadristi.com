@@ -6,5 +6,5 @@ export default function ProtectedRoute() {
 
   if (loading) return <div>Loading...</div>;
 
-  return currentUser ? <Outlet /> : <Navigate to="/admin/login" />;
+  return currentUser ? <Outlet /> : <Navigate to="/secret-admin" replace />;
 }

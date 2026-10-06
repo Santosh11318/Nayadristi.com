@@ -7,6 +7,7 @@ export default function AboutPage() {
   const [authors, setAuthors] = useState<any[]>([]);
 
   useEffect(() => {
+    document.title = "हाम्रोबारे (About Us) | नयाँदृष्टि";
     getAuthors()
       .then((data) => {
         if (data && data.length > 0) {

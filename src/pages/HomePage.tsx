@@ -12,6 +12,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "नयाँदृष्टि (NayaDristi) | नेपाली डिजिटल समाचार पोर्टल";
     async function loadData() {
       try {
         const [firestoreArticles, firestoreAds] = await Promise.all([

@@ -1,7 +1,11 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Shield, BookOpen, CheckCircle2, ChevronRight, Scale } from "lucide-react";
 
 export default function EditorialPolicyPage() {
+  useEffect(() => {
+    document.title = "सम्पादकीय आचारसंहिता (Editorial Policy) | नयाँदृष्टि";
+  }, []);
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Breadcrumb */}

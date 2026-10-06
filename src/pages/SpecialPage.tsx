@@ -9,6 +9,7 @@ export default function SpecialPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "विशेष समाचार (Special Reports) | नयाँदृष्टि";
     getPublishedArticles()
       .then((data) => {
         if (data && data.length > 0) {

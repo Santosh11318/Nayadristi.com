@@ -312,7 +312,15 @@ export async function getCategories(): Promise<FirestoreCategory[]> {
   try {
     const snap = await getDocs(categoriesCol);
     const list: FirestoreCategory[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
+    const seenNames = new Set<string>();
+    snap.forEach((d) => {
+      const data = d.data() as any;
+      const key = (data.name || data.slug || "").trim().toLowerCase();
+      if (key && !seenNames.has(key)) {
+        seenNames.add(key);
+        list.push({ id: d.id, ...data });
+      }
+    });
     list.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     return list;
   } catch (err) {

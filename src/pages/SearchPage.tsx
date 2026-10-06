@@ -14,6 +14,7 @@ export default function SearchPage() {
   useEffect(() => {
     const q = searchParams.get("q") || "";
     setSearchTerm(q);
+    document.title = q.trim() ? `"${q.trim()}" खोज परिणाम | नयाँदृष्टि` : "समाचार खोज | नयाँदृष्टि";
     if (!q.trim()) {
       setResults([]);
       return;

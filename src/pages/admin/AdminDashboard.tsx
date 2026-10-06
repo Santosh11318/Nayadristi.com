@@ -15,6 +15,7 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    document.title = "ड्यासबोर्ड (Admin Dashboard) | नयाँदृष्टि CMS";
     const fetchStats = async () => {
       try {
         const fbStats = await getPortalStats();

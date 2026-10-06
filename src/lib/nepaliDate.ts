@@ -13,8 +13,21 @@ const nepaliDays = [
 
 const devanagariDigits = ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"];
 
+import { format } from "date-fns";
+
 export function toNepaliNumber(num: number | string): string {
   return String(num).replace(/\d/g, (d) => devanagariDigits[parseInt(d, 10)]);
+}
+
+export function formatDateSafe(dateStr?: string | null, formatStr: string = 'MMM d, yyyy'): string {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return format(d, formatStr);
+  } catch {
+    return '';
+  }
 }
 
 /**

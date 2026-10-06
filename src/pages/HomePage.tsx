@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Clock, User, Flame, ArrowRight, TrendingUp } from "lucide-react";
-import { toNepaliNumber } from "../lib/nepaliDate";
+import { toNepaliNumber, formatDateSafe } from "../lib/nepaliDate";
 import AdSlot from "../components/AdSlot";
 import { getPublishedArticles, getAdvertisements } from "../lib/firestoreService";
 
@@ -103,7 +103,7 @@ export default function HomePage() {
               <div className="flex items-center gap-3 text-xs text-slate-400 pt-2 border-t border-white/20">
                 <span className="font-semibold text-white">{featured.author?.name || "नयाँदृष्टि सम्पादक"}</span>
                 <span>•</span>
-                <span>{featured.publishedAt ? format(new Date(featured.publishedAt), 'MMM d, yyyy') : ''}</span>
+                <span>{formatDateSafe(featured.publishedAt, 'MMM d, yyyy')}</span>
               </div>
             </div>
           </Link>
@@ -149,7 +149,7 @@ export default function HomePage() {
                     </h4>
                   </div>
                   <span className="text-[10px] text-slate-400">
-                    {article.publishedAt ? format(new Date(article.publishedAt), 'MMM d, h:mm a') : ''}
+                    {formatDateSafe(article.publishedAt, 'MMM d, h:mm a')}
                   </span>
                 </div>
               </Link>
@@ -214,7 +214,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-400 mt-4 pt-3 border-t border-slate-100">
                       <span>{article.author?.name || "नयाँदृष्टि"}</span>
-                      <span>{article.publishedAt ? format(new Date(article.publishedAt), 'MMM d, yyyy') : ''}</span>
+                      <span>{formatDateSafe(article.publishedAt, 'MMM d, yyyy')}</span>
                     </div>
                   </div>
                 </Link>
@@ -250,7 +250,7 @@ export default function HomePage() {
                         {art.title}
                       </h4>
                       <span className="text-[10px] text-slate-400 mt-1 block">
-                        {art.publishedAt ? format(new Date(art.publishedAt), 'MMM d') : ''}
+                        {formatDateSafe(art.publishedAt, 'MMM d')}
                       </span>
                     </div>
                   </Link>

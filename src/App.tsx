@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./components/MainLayout";
 import HomePage from "./pages/HomePage";
 import ArticlePage from "./pages/ArticlePage";
@@ -28,6 +28,7 @@ import AdminMedia from "./pages/admin/AdminMedia";
 import AdminAds from "./pages/admin/AdminAds";
 import AdminSettings from "./pages/admin/AdminSettings";
 import { seedInitialFirestoreData } from "./lib/firestoreService";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 export default function App() {
   useEffect(() => {
@@ -35,37 +36,42 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="news/:slug" element={<ArticlePage />} />
-            <Route path="category/:slug" element={<CategoryPage />} />
-            <Route path="search" element={<SearchPage />} />
-            <Route path="about" element={<AboutPage />} />
-            <Route path="contact" element={<ContactPage />} />
-            <Route path="editorial" element={<EditorialPolicyPage />} />
-            <Route path="special" element={<SpecialPage />} />
-          </Route>
-          
-          <Route path="/admin/login" element={<AdminLogin />} />
-          
-          <Route path="/admin" element={<ProtectedRoute />}>
-            <Route element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="news" element={<AdminNewsList />} />
-              <Route path="news/new" element={<AdminNewsEditor />} />
-              <Route path="news/:id" element={<AdminNewsEditor />} />
-              <Route path="categories" element={<AdminCategories />} />
-              <Route path="authors" element={<AdminAuthors />} />
-              <Route path="ads" element={<AdminAds />} />
-              <Route path="media" element={<AdminMedia />} />
-              <Route path="settings" element={<AdminSettings />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="news/:slug" element={<ArticlePage />} />
+              <Route path="category/:slug" element={<CategoryPage />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="about" element={<AboutPage />} />
+              <Route path="contact" element={<ContactPage />} />
+              <Route path="editorial" element={<EditorialPolicyPage />} />
+              <Route path="special" element={<SpecialPage />} />
             </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            
+            <Route path="/admin/login" element={<AdminLogin />} />
+            
+            <Route path="/admin" element={<ProtectedRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="news" element={<AdminNewsList />} />
+                <Route path="news/new" element={<AdminNewsEditor />} />
+                <Route path="news/:id" element={<AdminNewsEditor />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="authors" element={<AdminAuthors />} />
+                <Route path="ads" element={<AdminAds />} />
+                <Route path="media" element={<AdminMedia />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
+            </Route>
+
+            {/* Fallback for any unknown route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </HashRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
